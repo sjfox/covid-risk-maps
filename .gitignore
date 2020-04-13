@@ -1,0 +1,7 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+processed_data/
+figures/
+processed_data_varying_det_prob/

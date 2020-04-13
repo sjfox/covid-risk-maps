@@ -35,7 +35,7 @@ covid_params_fn = function(base_r_not           = 1.5,
                            base_dispersion      = 0.16,                   # Lloyd-Smith et al. 2005
                            dispersion           = base_dispersion/inf_period,  
                            prop_p               = base_dispersion/(base_r_not+base_dispersion), # beta
-                           e_thresh             = 500,
+                           e_thresh             = 2000, # was 500
                            prob_symp            = 1,
                            dis_prob_symp        = base_det_prob/inf_period,
                            dis_prob_asymp       = 0.0

@@ -5,15 +5,29 @@ save_cty_data <- function(data_path, case_date = NULL){
   cty_data <- get_cty_data(data_path, case_date)
   save("cty_data", file = str_replace(string = data_path, pattern = "sim", replacement = "county-summary"))
 }
-get_cty_data <- function(data_path, 
-                         case_date = NULL){
+
+get_cty_data <- function(data_path, case_date = NULL){
   require(usmap)
+  require(scam)
   
   load(data_path)
   epi_probs <- get_epidemic_prob_by_d(trials = sims, 
-                                      prev_threshold = 10, 
-                                      cum_threshold = 500, 
-                                      max_detect = 50)
+                                      prev_threshold = 50,
+                                      cum_threshold = 2000, # should match epi_thresh
+                                      max_detect = 100) # the max number of cases to get epi_prob for
+  
+  # Ensure epidemic probabilities are monotonic increasing by fitting scam to data
+  epi_probs$prob_epidemic[is.na(epi_probs$prob_epidemic)]=1
+  scam_convert=scam(formula = epi_probs$prob_epidemic ~ s(epi_probs$detected, k = 25, bs = "micv"))
+  scam_prob_epidemic = scam_convert$fitted.values
+  scam_prob_epidemic[scam_prob_epidemic > 1]=1
+  
+  # write to processed_data folder to use for plotting
+  epi_case_df = data.frame(epi_probs$detected, epi_probs$prob_epidemic, scam_prob_epidemic)
+  names(epi_case_df)=c("detected", "prob_epidemic", "scam_prob_epidemic")
+  csv_path=str_replace(string = data_path, pattern = "rda", replacement = "csv")
+  epi_path=str_replace(string = csv_path, pattern = "sim", replacement = "epi_prob_data")
+  write.csv(epi_case_df, epi_path, row.names = FALSE)
   
   ## Read in case data and subset to correct date
   ## Defaults to using the most recent case data
@@ -44,6 +58,7 @@ get_cty_data <- function(data_path,
                 select(fips, date, cases, deaths), by = "fips") %>% 
     mutate(cases = ifelse(is.na(cases), 0, cases),
            epi_prob = epi_probs$prob_epidemic[cases+1]) %>% 
+           #epi_prob = scam_prob_epidemic[cases+1]) %>%
     mutate(epi_prob = ifelse(is.na(epi_prob), 1, epi_prob)) %>% 
     rename(state = full)
 }
@@ -104,3 +119,45 @@ plot_county_summary_sensitivity <- function(df){
     scale_color_manual(values=c("#999999", "grey39", "#000000"))+
     theme_bw(base_size = 10)
 }
+
+
+
+make_case_risk_plot=function(r_not_vect, det_prob){
+  ### Open files with epi_prob data for all R0 run and put in one data frame
+  full_df=data.frame(R0=double(), cases_detected=double(), epi_prob=double(), scam_epi_prob=double())
+  for(val in 1:length(r_not_vect)){
+    temp_df = read.csv( paste0("processed_data/epi_prob_data_", r_not_vect[val],"_", det_prob, "_0_1e+05.csv"), header = TRUE)
+    R0=rep(r_not_vect[val], length(temp_df$detected))
+    temp_df = cbind(R0, temp_df)
+    full_df = rbind(full_df, temp_df)
+  }
+  names(full_df) = c("R0", "cases_detected", "epi_prob", "scam_epi_prob")
+  full_df$R0 = factor(full_df$R0)
+  
+  ### Plot cases detected by epidemic risk
+  case_risk_plot=ggplot(full_df, aes(x=cases_detected, y=epi_prob, group=R0, color=R0, shape=R0))+
+  #case_risk_plot=ggplot(full_df, aes(x=cases_detected, y=scam_epi_prob, group=R0, color=R0, shape=R0))+
+    geom_line()+
+    geom_point()+
+    scale_colour_grey()+
+    expand_limits(y = 0)+
+    xlab("Cases Detected")+
+    ylab("Epidemic Risk")+
+    labs(color="R0", shape="R0")+
+    theme_bw(base_size = 8)+
+    theme(panel.grid.minor = element_line(colour="white", size=0.1)) +
+    scale_x_continuous(minor_breaks = seq(0 , 100, 1), breaks = seq(0, 100, 10))+
+    scale_y_continuous(minor_breaks = seq(0.0 , 1.1, 0.1), breaks = seq(0, 1.1, 0.1))
+
+  png(file="figures/case_risk_plot.png",
+      width=4.25,height=3.25, units = "in", res=1200)
+  plot(case_risk_plot)
+  dev.off()
+}
+
+
+
+
+
+
+
