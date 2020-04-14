@@ -114,7 +114,7 @@ plot_county_summary_sensitivity <- function(df){
     facet_wrap(~key) +
     background_grid(major = 'xy')+
     labs(color  = expression(R[0]), shape=expression(R[0]), linetype=expression(R[0]))+
-    xlab("Detection Probability")+
+    xlab("Case Detection Probability")+
     ylab("Percent")+
     scale_color_manual(values=c("#999999", "grey39", "#000000"))+
     theme_bw(base_size = 10)
@@ -143,7 +143,7 @@ make_case_risk_plot=function(r_not_vect, det_prob){
     geom_point()+
     scale_colour_grey()+
     expand_limits(y = 0)+
-    xlab("Number of Cases Reported")+
+    xlab("Cumulative Cases Reported")+
     ylab("Epidemic Risk")+
     labs(color="R0", shape="R0")+
     theme_bw(base_size = 8)+
