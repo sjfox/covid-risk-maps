@@ -14,7 +14,7 @@ get_cty_data <- function(data_path, case_date = NULL){
   epi_probs <- get_epidemic_prob_by_d(trials = sims, 
                                       prev_threshold = 50,
                                       cum_threshold = 2000, # should match epi_thresh
-                                      max_detect = 100) # the max number of cases to get epi_prob for
+                                      max_detect = 210) # the max number of cases to get epi_prob for
   
   # Ensure epidemic probabilities are monotonic increasing by fitting scam to data
   epi_probs$prob_epidemic[is.na(epi_probs$prob_epidemic)]=1
@@ -134,19 +134,21 @@ make_case_risk_plot=function(r_not_vect, det_prob){
   names(full_df) = c("R0", "cases_detected", "epi_prob", "scam_epi_prob")
   full_df$R0 = factor(full_df$R0)
   
+  full_df=subset(full_df, cases_detected<=50)
+  
   ### Plot cases detected by epidemic risk
-  case_risk_plot=ggplot(full_df, aes(x=cases_detected, y=epi_prob, group=R0, color=R0, shape=R0))+
+  case_risk_plot=ggplot(full_df, aes(x=cases_detected, y=epi_prob, group=R0, color=R0, shape=R0))+ #
   #case_risk_plot=ggplot(full_df, aes(x=cases_detected, y=scam_epi_prob, group=R0, color=R0, shape=R0))+
     geom_line()+
     geom_point()+
     scale_colour_grey()+
     expand_limits(y = 0)+
-    xlab("Cases Detected")+
+    xlab("Number of Cases Reported")+
     ylab("Epidemic Risk")+
     labs(color="R0", shape="R0")+
     theme_bw(base_size = 8)+
     theme(panel.grid.minor = element_line(colour="white", size=0.1)) +
-    scale_x_continuous(minor_breaks = seq(0 , 100, 1), breaks = seq(0, 100, 10))+
+    scale_x_continuous(minor_breaks = seq(0 , 50, 1), breaks = seq(0, 50, 5))+
     scale_y_continuous(minor_breaks = seq(0.0 , 1.1, 0.1), breaks = seq(0, 1.1, 0.1))
 
   png(file="figures/case_risk_plot.png",

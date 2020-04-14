@@ -76,12 +76,6 @@ make_case_risk_plot(r_not_vect=r_not, det_prob=0.1)
 
 ## Get case summary statistics
 get_summary_stats(cty_data)
-
-
-
-  
-  
-  
   
   
   
