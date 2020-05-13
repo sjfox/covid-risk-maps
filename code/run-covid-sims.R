@@ -25,9 +25,9 @@ r_not <- c(1.1, 1.5, 3)
 detection_probability <- c(0.05, 0.1, 0.2, 0.3, 0.4)
 importation_rate <- c(0)
 num_runs=100000
+run_df <- expand_grid(r_not, detection_probability, importation_rate)
 
 ## Run and save simulations across all parameter combinations
-run_df <- expand_grid(r_not, detection_probability, importation_rate)
 if(!dir.exists("processed_data/")){
   dir.create("processed_data/")
 }
@@ -36,13 +36,14 @@ run_df %>%
   unlist()
 
 ## Get all simulation county data pre-processed
+# need to run to update counties with most recent case data
 run_df %>% 
   pmap(.f = get_save_path, num_reps = num_runs) %>% 
   map(save_cty_data)
 
 
-
 ## Create maps for figures
+# load specific data set to build maps with
 load(get_save_path(r_not = 1.5, 
                    detection_probability = 0.1, 
                    importation_rate = 0, 
@@ -80,4 +81,5 @@ get_summary_stats(cty_data)
 ## Number of county remaining with less than 5 detected cases  
 sub=subset(cty_data, cases<5)
 length(sub$county)
+
 
